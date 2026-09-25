@@ -225,3 +225,7 @@ The outbound itself is unchanged. A typical Warp outbound looks like:
 pip install -e ".[dev]"
 pytest
 ```
+
+## License
+
+[MIT](LICENSE)

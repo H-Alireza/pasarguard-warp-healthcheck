@@ -8,6 +8,7 @@ dynamic = ["version"]
 description = "PasarGuard Warp outbound health check and core restarter"
 readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "MIT" }
 dependencies = [
     # [socks] so telegram.proxy can be a socks5:// URL.
     "httpx[socks]>=0.27",
