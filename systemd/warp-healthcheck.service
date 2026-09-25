@@ -1,0 +1,38 @@
+[Unit]
+Description=PasarGuard Warp outbound health check
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/warp-healthcheck/.venv/bin/warp-healthcheck --config /etc/warp-healthcheck/config.yaml run
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+# Optional: EnvironmentFile=/etc/warp-healthcheck/env
+# Status for `warp-healthcheck status` / the menu: /var/lib/warp-healthcheck/status.json
+StateDirectory=warp-healthcheck
+
+# Sandboxing: the daemon only needs outbound HTTPS and its state directory.
+CapabilityBoundingSet=
+AmbientCapabilities=
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

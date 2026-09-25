@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "warp-healthcheck"
+dynamic = ["version"]
+description = "PasarGuard Warp outbound health check and core restarter"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # [socks] so telegram.proxy can be a socks5:// URL.
+    "httpx[socks]>=0.27",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/H-Alireza/pasarguard-warp-healthcheck"
+
+[project.scripts]
+warp-healthcheck = "warp_healthcheck.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "warp_healthcheck.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

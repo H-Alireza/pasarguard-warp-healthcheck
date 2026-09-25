@@ -1,0 +1,31 @@
+panel:
+  base_url: https://panel.example.com
+  username: admin
+  password: "change-me"
+  # Set false only if the panel uses a self-signed cert.
+  verify_tls: true
+
+check:
+  interval_seconds: 10
+  timeout_seconds: 8
+  fail_threshold: 3
+  restart_cooldown_seconds: 90
+  max_restarts_per_hour: 6
+  # Observatory result older than this is treated as unknown, not down.
+  stale_after_seconds: 20
+  outbound_tag: warp
+
+# Empty = auto-discover cores that have a wireguard outbound with outbound_tag.
+# Set IDs to watch only those cores.
+core_ids: []
+
+# Optional Telegram alerts: core restarted, recovered, restart failed,
+# hourly restart cap reached. Leave bot_token or chat_id empty to disable.
+telegram:
+  bot_token: ""
+  chat_id: ""
+  # Only if api.telegram.org is blocked from this server, e.g. socks5://127.0.0.1:1080
+  proxy: ""
+
+# Where the service writes live status for `warp-healthcheck status` and the menu.
+# status_file: /var/lib/warp-healthcheck/status.json
