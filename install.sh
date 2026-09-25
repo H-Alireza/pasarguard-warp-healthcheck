@@ -90,10 +90,12 @@ need_root() {
 
 have_cmd() { command -v "$1" >/dev/null 2>&1; }
 
+# Python 3.11+ that can also build a venv with pip. Debian/Ubuntu ship python3
+# without ensurepip unless python3-venv is installed.
 python_ok() {
   local bin="$1"
   have_cmd "$bin" || return 1
-  "$bin" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null
+  "$bin" -c 'import sys, venv, ensurepip; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null
 }
 
 detect_python() {
@@ -111,11 +113,18 @@ install_python() {
   if have_cmd apt-get; then
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y
-    apt-get install -y python3 python3-venv python3-pip ca-certificates
+    apt-get install -y --no-install-recommends python3 python3-venv ca-certificates
     if python_ok python3; then
       return 0
     fi
-    apt-get install -y python3.12 python3.12-venv python3.11 python3.11-venv || true
+    # python3-venv can lag behind a newer python3; install the matching one.
+    local minor
+    minor="$(python3 -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || true)"
+    if [[ -n "$minor" ]]; then
+      apt-get install -y --no-install-recommends "python${minor}-venv" || true
+      python_ok python3 && return 0
+    fi
+    apt-get install -y --no-install-recommends python3.12 python3.12-venv python3.11 python3.11-venv || true
   elif have_cmd dnf; then
     dnf install -y python3 python3-pip python3-virtualenv ca-certificates || \
       dnf install -y python3.12 python3.11 ca-certificates
@@ -140,7 +149,7 @@ ensure_git() {
   if have_cmd apt-get; then
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y
-    apt-get install -y git ca-certificates
+    apt-get install -y --no-install-recommends git ca-certificates
   elif have_cmd dnf; then
     dnf install -y git ca-certificates
   elif have_cmd yum; then
@@ -202,8 +211,10 @@ copy_app() {
 
 create_venv() {
   log "Creating venv at ${VENV_DIR}"
-  if [[ ! -x "${VENV_DIR}/bin/python" ]]; then
-    "$PYTHON_BIN" -m venv "$VENV_DIR"
+  # A failed earlier run can leave bin/python without pip; rebuild that.
+  if [[ ! -x "${VENV_DIR}/bin/python" || ! -x "${VENV_DIR}/bin/pip" ]]; then
+    rm -rf "$VENV_DIR"
+    "$PYTHON_BIN" -m venv "$VENV_DIR" || { rm -rf "$VENV_DIR"; die "Could not create a venv with ${PYTHON_BIN}"; }
   fi
   "${VENV_DIR}/bin/pip" install --quiet --upgrade pip
   "${VENV_DIR}/bin/pip" install --quiet --upgrade "$APP_DIR"
