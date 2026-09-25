@@ -393,10 +393,18 @@ configure() {
 run_doctor() {
   [[ "$SKIP_DOCTOR" -eq 1 ]] && return 0
   log "Running doctor"
-  if "${VENV_DIR}/bin/warp-healthcheck" --config "$CONFIG_FILE" doctor; then
-    return 0
-  fi
-  warn "doctor failed — check URL, credentials, Observatory, and node connectivity"
+  local code=0
+  "${VENV_DIR}/bin/warp-healthcheck" --config "$CONFIG_FILE" doctor || code=$?
+  case "$code" in
+    0) return 0 ;;
+    3)
+      # Panel login works; some nodes are down/unknown or Observatory needs setup.
+      # That is what the service is for, so start it anyway.
+      warn "doctor reported Warp/Observatory problems on some nodes (see above); starting the service anyway"
+      return 0
+      ;;
+  esac
+  warn "doctor failed — check URL, credentials, and panel connectivity"
   return 1
 }
 

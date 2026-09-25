@@ -97,7 +97,7 @@ Newer PasarGuard Node builds may inject Observatory automatically. If `warp-heal
 | --- | --- |
 | *(none)* / `menu` | Interactive menu |
 | `status` | Print the status table once. `-w` refreshes every 2s, `--json` prints the raw status |
-| `doctor` | Auth, list Warp cores/nodes, one live latency probe, config warnings. No restart |
+| `doctor` | Auth, list Warp cores/nodes, one live latency probe, config warnings. No restart. Exit code 0 = all good, 1 = can't monitor (login, panel, no Warp cores), 3 = panel OK but some nodes aren't UP or Observatory needs setup |
 | `setup` | Add Observatory for the Warp tag via `PUT /api/core/{id}?restart_nodes=true` |
 | `restart-core ID` | Restart one core now |
 | `update` | Update from GitHub, keeping config |

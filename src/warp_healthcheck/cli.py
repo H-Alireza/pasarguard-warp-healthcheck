@@ -26,6 +26,10 @@ logger = logging.getLogger("warp-healthcheck")
 # has to be a little longer or we race the panel's answer.
 REQUEST_MARGIN_SECONDS = 5
 
+# doctor exit codes: 0 all good; 1 cannot monitor (auth, panel, no Warp cores);
+# DOCTOR_WARNINGS = panel OK but some nodes are not UP or Observatory needs work.
+DOCTOR_WARNINGS = 3
+
 
 def _configure_logging(level: int = logging.INFO) -> None:
     logging.basicConfig(
@@ -90,7 +94,7 @@ async def cmd_doctor(config: AppConfig) -> int:
             print(f"\nCore {core.id} {core.name}  observatory={'yes' if has_obs else 'NO'}")
             if not has_obs:
                 print("  ! No Observatory for this tag. Run: warp-healthcheck setup")
-                exit_code = 1
+                exit_code = DOCTOR_WARNINGS
             interval = observatory_interval_seconds(core.config, tag)
             if interval is not None and interval > check.stale_after_seconds:
                 print(
@@ -99,7 +103,7 @@ async def cmd_doctor(config: AppConfig) -> int:
                     "UNKNOWN and never restarted. Lower probeInterval on the core or raise "
                     "check.stale_after_seconds."
                 )
-                exit_code = 1
+                exit_code = DOCTOR_WARNINGS
             nodes = await client.list_nodes(core_id=core.id)
             if not nodes:
                 print("  (no nodes)")
@@ -118,7 +122,7 @@ async def cmd_doctor(config: AppConfig) -> int:
                 extra = f" delay={probe.delay_ms}ms" if probe.delay_ms else ""
                 print(f"  node {node.id} {node.name} [{node.status}] {mark}{extra} — {probe.detail}")
                 if probe.status is not ProbeStatus.UP:
-                    exit_code = 1
+                    exit_code = DOCTOR_WARNINGS
         return exit_code
 
 
