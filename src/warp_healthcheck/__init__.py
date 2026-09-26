@@ -1,6 +1,6 @@
 """PasarGuard Warp outbound health check."""
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 GITHUB_REPO = "H-Alireza/pasarguard-warp-healthcheck"
 GITHUB_BRANCH = "main"

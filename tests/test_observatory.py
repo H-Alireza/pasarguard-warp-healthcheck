@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from warp_healthcheck.observatory import (
     ensure_observatory,
+    has_misspelled_probe_url,
     observatory_has_tag,
     observatory_interval_seconds,
     parse_duration,
@@ -23,11 +24,13 @@ def test_adds_observatory_when_missing():
     config, changed = ensure_observatory({}, "warp", probe_interval="10s")
     assert changed
     assert config["observatory"]["subjectSelector"] == ["warp"]
+    assert config["observatory"]["probeURL"] == "https://www.cloudflare.com/cdn-cgi/trace"
+    assert "probeUrl" not in config["observatory"]
     assert observatory_has_tag(config, "warp")
 
 
 def test_appends_tag_to_existing_observatory():
-    original = {"observatory": {"subjectSelector": ["proxy"], "probeUrl": "x", "probeInterval": "1m"}}
+    original = {"observatory": {"subjectSelector": ["proxy"], "probeURL": "x", "probeInterval": "1m"}}
     config, changed = ensure_observatory(original, "warp")
     assert changed
     assert config["observatory"]["subjectSelector"] == ["proxy", "warp"]
@@ -53,3 +56,24 @@ def test_observatory_interval_seconds():
         "warp",
     ) == 30
     assert observatory_interval_seconds({"observatory": {"subjectSelector": ["x"]}}, "warp") is None
+
+
+def test_renames_misspelled_probe_url():
+    # Xray reads `probeURL`; `probeUrl` (written by older versions) is ignored.
+    original = {"observatory": {"subjectSelector": ["warp"], "probeUrl": "https://x/y", "probeInterval": "10s"}}
+    assert has_misspelled_probe_url(original)
+    config, changed = ensure_observatory(original, "warp")
+    assert changed
+    assert config["observatory"]["probeURL"] == "https://x/y"
+    assert "probeUrl" not in config["observatory"]
+    assert not has_misspelled_probe_url(config)
+    _, changed_again = ensure_observatory(config, "warp")
+    assert not changed_again
+
+
+def test_misspelled_key_dropped_when_correct_key_exists():
+    original = {"observatory": {"subjectSelector": ["warp"], "probeURL": "https://keep", "probeUrl": "https://old"}}
+    config, changed = ensure_observatory(original, "warp")
+    assert changed
+    assert config["observatory"]["probeURL"] == "https://keep"
+    assert "probeUrl" not in config["observatory"]

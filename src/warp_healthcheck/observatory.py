@@ -6,6 +6,7 @@ from typing import Any
 
 
 DEFAULT_PROBE_URL = "https://www.cloudflare.com/cdn-cgi/trace"
+MISSPELLED_PROBE_URL = "probeUrl"
 
 _DURATION_PART = re.compile(r"(\d+(?:\.\d+)?)(ms|h|m|s)")
 _DURATION_UNITS = {"ms": 0.001, "s": 1.0, "m": 60.0, "h": 3600.0}
@@ -50,6 +51,12 @@ def observatory_has_tag(config: dict[str, Any], tag: str) -> bool:
     return False
 
 
+def has_misspelled_probe_url(config: dict[str, Any]) -> bool:
+    """True if the observatory block uses `probeUrl`, which Xray ignores."""
+    observatory = config.get("observatory")
+    return isinstance(observatory, dict) and MISSPELLED_PROBE_URL in observatory
+
+
 def ensure_observatory(
     config: dict[str, Any],
     tag: str,
@@ -85,8 +92,15 @@ def ensure_observatory(
             selectors.append(tag)
             observatory["subjectSelector"] = selectors
             changed = True
-        if not observatory.get("probeUrl"):
-            observatory["probeUrl"] = probe_url
+        # Xray reads `probeURL` (case-sensitive). Older versions of this tool
+        # wrote `probeUrl`, which Xray ignores; move it to the right key.
+        if MISSPELLED_PROBE_URL in observatory:
+            misspelled = observatory.pop(MISSPELLED_PROBE_URL)
+            if not observatory.get("probeURL") and misspelled:
+                observatory["probeURL"] = misspelled
+            changed = True
+        if not observatory.get("probeURL"):
+            observatory["probeURL"] = probe_url
             changed = True
         if not observatory.get("probeInterval"):
             observatory["probeInterval"] = probe_interval
@@ -95,7 +109,7 @@ def ensure_observatory(
 
     updated["observatory"] = {
         "subjectSelector": [tag],
-        "probeUrl": probe_url,
+        "probeURL": probe_url,
         "probeInterval": probe_interval,
         "enableConcurrency": True,
     }

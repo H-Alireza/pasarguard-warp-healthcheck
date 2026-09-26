@@ -38,7 +38,7 @@ sudo warp-healthcheck
 ```
 
 ```text
-Warp health check v1.1.0   service: running
+Warp health check v1.1.1   service: running
 tag 'warp' · every 10s · restart after 3 fails · max 6/h · telegram on · updated 2s ago
 
 Core 1 germany  [OK]  restarts 1/h · last 14m ago
@@ -191,12 +191,14 @@ For a manual install, create `/opt/warp-healthcheck/.venv`, run `pip install .`,
 {
   "observatory": {
     "subjectSelector": ["warp"],
-    "probeUrl": "https://www.cloudflare.com/cdn-cgi/trace",
+    "probeURL": "https://www.cloudflare.com/cdn-cgi/trace",
     "probeInterval": "10s",
     "enableConcurrency": true
   }
 }
 ```
+
+Versions before 1.1.1 wrote `probeUrl` here. Xray ignores that key (the field is `probeURL`), so those cores probed Xray's default URL instead. `doctor` flags them, and `setup` renames the key.
 
 If the core already uses `burstObservatory`, `setup` adds the Warp tag there instead of creating a second observer.
 

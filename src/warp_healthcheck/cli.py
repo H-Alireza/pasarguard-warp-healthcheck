@@ -15,6 +15,7 @@ from warp_healthcheck.models import PanelError
 from warp_healthcheck.observatory import (
     DEFAULT_PROBE_URL,
     ensure_observatory,
+    has_misspelled_probe_url,
     observatory_has_tag,
     observatory_interval_seconds,
 )
@@ -94,6 +95,12 @@ async def cmd_doctor(config: AppConfig) -> int:
             print(f"\nCore {core.id} {core.name}  observatory={'yes' if has_obs else 'NO'}")
             if not has_obs:
                 print("  ! No Observatory for this tag. Run: warp-healthcheck setup")
+                exit_code = DOCTOR_WARNINGS
+            if has_misspelled_probe_url(core.config):
+                print(
+                    "  ! Observatory uses 'probeUrl', which Xray ignores (the key is "
+                    "'probeURL'), so it probes Xray's default URL. Run: warp-healthcheck setup"
+                )
                 exit_code = DOCTOR_WARNINGS
             interval = observatory_interval_seconds(core.config, tag)
             if interval is not None and interval > check.stale_after_seconds:
